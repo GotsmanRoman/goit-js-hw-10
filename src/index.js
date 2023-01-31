@@ -2,6 +2,8 @@ import './css/styles.css';
 import throttle from 'lodash.throttle';
 import debounce from 'lodash.debounce';
 import Notiflix from 'notiflix';
+import countryListTpl from './templates/countryList.hbs';
+import countryInfoTpl from './templates//countryInfo.hbs';
 
 const DEBOUNCE_DELAY = 300;
 const refs = {
@@ -20,7 +22,6 @@ function onSearch(e) {
   const query = refs.searchInput.value.trim();
   if (query.length === 0) {
     resetHtmlResult();
-    // showWarning();
     return;
   }
   fetchCountryName(query);
@@ -44,11 +45,11 @@ function showError(valueToFade = '2000') {
     timeout: valueToFade,
   });
 }
-// function showWarning(valueToFade = '2000') {
-//   Notiflix.Notify.warning('Input something, empty field!!', {
-//     timeout: valueToFade,
-//   });
-// }
+function isResponseOk(response) {
+  if (response.status !== 200) {
+    throw new Error(response.status);
+  }
+}
 
 function fetchCountryName(searchQuery) {
   const searchBy = 'name';
@@ -67,41 +68,20 @@ function fetchCountryName(searchQuery) {
   )
     .then(response => {
       // Response handling
-      console.log(response);
+      isResponseOk(response);
       return response.json();
     })
     .then(data => {
       // Data handling
       resetHtmlResult();
-      console.log(data);
       if (data.length > 10) {
         showNotify();
         return;
       }
       if (data.length > 1) {
-        data.forEach(elem => {
-          let html2 = `
-          <li class="country__item">
-            <img src="${elem.flags.svg}" width=32px> ${elem.name['common']}
-          </li>`;
-          refs.countryList.insertAdjacentHTML('beforeend', html2);
-        });
+        refs.countryList.innerHTML = countryListTpl(data);
       } else {
-        let html2 = `
-        <li class="country__item">
-          <img src="${data[0].flags.svg}" width=32px> ${data[0].name['common']}
-        </li>`;
-        refs.countryList.insertAdjacentHTML('beforeend', html2);
-
-        let html = `
-        <ul class="country__list">
-        <li class="country__item">Capital: ${data[0].capital}</li>
-        <li class="country__item">Population: ${data[0].population}</li>
-        <li class="country__item">Language: ${Object.values(
-          data[0].languages
-        )}</li>`;
-
-        refs.countryInfo.innerHTML = html;
+        refs.countryInfo.innerHTML = countryInfoTpl(data);
       }
 
       return data;
